@@ -3,8 +3,7 @@ pipeline {
 
     stages {
 
-       /*
-        stage('Build') {
+        stage('Build') {  // Re-enabled Build stage
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -22,7 +21,6 @@ pipeline {
                 '''
             }
         }
-        */
 
         stage('Test') {
             agent {
@@ -33,14 +31,13 @@ pipeline {
             }
             steps {
                 sh '''
-                    #test -f build/index.html
+                    test -f build/index.html || (echo "Build not found!"; exit 1)
                     npm test
                 '''
             }
         }
-    }
 
-     stage('E2E') {
+        stage('E2E') {
             agent {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.51.0-noble'
@@ -49,12 +46,14 @@ pipeline {
             }
             steps {
                 sh '''
-                      npm install -g serve
-                      serve -s build
-                      npx playwright test
+                    npm install -g serve
+                    serve -s build &
+                    sleep 5  # Ensure the server starts
+                    npx playwright test
                 '''
             }
         }
+    }
 
     post {
         always {
